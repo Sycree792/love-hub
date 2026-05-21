@@ -340,29 +340,23 @@
     }
     .contract-hearts {
       font-size: 1.2rem;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
       letter-spacing: 4px;
     }
     .contract-label {
       font-size: 0.85rem;
       color: var(--text-secondary);
-      margin-bottom: 6px;
+      margin-bottom: 0;
     }
     .contract-days {
       font-family: 'ZCOOL XiaoWei', serif;
-      font-size: 3.5rem;
-      background: var(--accent-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      line-height: 1.15;
-      text-shadow: none;
-      filter: drop-shadow(0 2px 4px rgba(232,90,138,0.15));
+      font-size: 2.5rem;
+      color: var(--accent);
+      line-height: 1.2;
+      margin: 0;
     }
     .contract-days-unit {
-      font-size: 0.9rem;
-      color: var(--text-secondary);
-      margin-top: 2px;
+      display: none;
     }
     .contract-detail {
       display: flex;
@@ -1423,13 +1417,12 @@
     function renderContract() {
       const c=Storage.get('love_config',{});
       if(!c.anniversaryDate){
-        $('#contractDays').textContent='?'; $('#contractDaysUnit').textContent='第 ? 天';
+        $('#contractDays').innerHTML='<span style="font-size:2rem;color:var(--text-muted)">?</span>';
         $('#contractDetail').innerHTML=''; $('#nextMilestone').innerHTML='<span style="color:var(--text-muted);font-size:0.8rem;">点击下方签订你们的契约 💕</span>';
         return;
       }
       const {totalDays,years,months,days}=calcDaysTogether(c.anniversaryDate);
-      $('#contractDays').innerHTML=`<span class="heartbeat">${totalDays}</span>`;
-      $('#contractDaysUnit').textContent=`第 ${totalDays} 天`;
+      $('#contractDays').innerHTML=`第 <span class="heartbeat" style="font-size:1.2em">${totalDays}</span> 天`;
       $('#contractDetail').innerHTML=`<span><span class="num">${years}</span><span class="unit">年</span></span><span><span class="num">${months}</span><span class="unit">月</span></span><span><span class="num">${days}</span><span class="unit">天</span></span>`;
       const mi=getNextMilestone(totalDays), lb=mi.label||`${mi.days}天`;
       $('#nextMilestone').innerHTML=`距离 <strong>${lb}</strong> 还有 <strong>${mi.remaining}</strong> 天`;
