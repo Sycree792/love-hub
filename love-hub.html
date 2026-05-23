@@ -1021,6 +1021,98 @@
     .settings-item .settings-label { color: var(--text-primary); }
     .settings-item .settings-value { color: var(--text-muted); font-size: 0.78rem; }
 
+    /* ===== 数据同步 ===== */
+    .sync-section { margin-top: 14px; }
+    .sync-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin: -8px 0 12px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px dashed var(--border);
+    }
+    .token-input-group {
+      display: flex;
+      gap: 8px;
+      flex: 1;
+      margin-left: 12px;
+    }
+    .token-input-group .form-input {
+      min-width: 0;
+      font-size: 0.75rem;
+    }
+    .token-status {
+      font-size: 0.75rem;
+      color: var(--success);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-text {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 0.7rem;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .btn-text:hover {
+      background: var(--bg-hover);
+    }
+    .sync-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .sync-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 12px;
+      font-size: 0.8rem;
+      position: relative;
+    }
+    .sync-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .sync-icon {
+      font-size: 1rem;
+    }
+    .sync-loading {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .sync-status {
+      margin-top: 12px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      text-align: center;
+      display: none;
+    }
+    .sync-status.success {
+      display: block;
+      background: rgba(144, 212, 168, 0.15);
+      color: var(--success);
+    }
+    .sync-status.error {
+      display: block;
+      background: rgba(255, 107, 157, 0.15);
+      color: var(--danger);
+    }
+    .last-sync {
+      margin-top: 8px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
     /* ===== 分隔 ===== */
     .divider { text-align: center; margin: 14px 0; color: var(--accent-light); font-size: 0.72rem; letter-spacing: 4px; opacity: 0.5; }
 
@@ -1298,6 +1390,56 @@
               <div class="theme-label">库洛米</div>
             </button>
           </div>
+        </div>
+
+        <!-- 数据同步 -->
+        <div class="card sync-section">
+          <div class="card-title">☁️ 数据同步</div>
+          <div class="sync-desc">通过 GitHub 与对象同步数据</div>
+          
+          <!-- Token 设置 -->
+          <div class="settings-item" id="githubTokenItem">
+            <span class="settings-label">GitHub Token</span>
+            <div class="token-input-group">
+              <input type="password" class="form-input" id="githubToken" placeholder="输入 GitHub Token" style="flex:1;">
+              <button class="btn btn-secondary btn-sm" id="saveTokenBtn">保存</button>
+            </div>
+          </div>
+          <div class="settings-item" id="githubTokenSaved" style="display:none;">
+            <span class="settings-label">GitHub Token</span>
+            <span class="token-status">✓ 已保存 <button class="btn-text" id="editTokenBtn">修改</button></span>
+          </div>
+          
+          <!-- Gist ID 显示/设置 -->
+          <div class="settings-item" id="gistIdItem" style="display:none;">
+            <span class="settings-label">Gist ID</span>
+            <div class="token-input-group">
+              <input type="text" class="form-input" id="gistIdInput" placeholder="输入已有的 Gist ID（可选）" style="flex:1;">
+              <button class="btn btn-secondary btn-sm" id="saveGistIdBtn">保存</button>
+            </div>
+          </div>
+          <div class="settings-item" id="gistIdSaved" style="display:none;">
+            <span class="settings-label">Gist ID</span>
+            <span class="token-status" id="gistIdDisplay">-</span>
+          </div>
+          
+          <!-- 同步按钮 -->
+          <div class="sync-actions">
+            <button class="btn btn-primary sync-btn" id="exportToGithubBtn">
+              <span class="sync-icon">📤</span>
+              <span class="sync-text">导出到 GitHub</span>
+              <span class="sync-loading" style="display:none;">⏳</span>
+            </button>
+            <button class="btn btn-secondary sync-btn" id="importFromGithubBtn">
+              <span class="sync-icon">📥</span>
+              <span class="sync-text">从 GitHub 导入</span>
+              <span class="sync-loading" style="display:none;">⏳</span>
+            </button>
+          </div>
+          
+          <!-- 同步状态 -->
+          <div class="sync-status" id="syncStatus"></div>
+          <div class="last-sync" id="lastSync">上次同步：从未</div>
         </div>
 
         <!-- 设置 -->
@@ -2417,6 +2559,304 @@
     function exportAllData(){const keys=Object.keys(localStorage).filter(k=>k.startsWith('love_'));const data={};keys.forEach(k=>{data[k]=JSON.parse(localStorage.getItem(k));});const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`xiaoxi-daily-${today()}.json`;a.click();URL.revokeObjectURL(url);showToast('数据已导出 📦');}
     function importAllData(){const input=document.createElement('input');input.type='file';input.accept='.json';input.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);Object.entries(d).forEach(([k,v])=>{if(k.startsWith('love_'))localStorage.setItem(k,JSON.stringify(v));});showToast('导入成功，即将刷新');setTimeout(()=>location.reload(),1000);}catch{showToast('文件格式错误');}};r.readAsText(f);};input.click();}
 
+    // ===== GitHub Gist 同步 =====
+    const GITHUB_SYNC_KEYS = ['love_mood_records', 'love_diet_records', 'love_body_records', 'love_todos', 'love_whispers', 'love_config'];
+    const GIST_FILENAME = 'xiaoxi-daily-data.json';
+
+    // 获取同步数据
+    function getSyncData() {
+      const data = {};
+      GITHUB_SYNC_KEYS.forEach(key => {
+        const value = localStorage.getItem(key);
+        if (value) {
+          data[key] = JSON.parse(value);
+        }
+      });
+      return {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        data: data
+      };
+    }
+
+    // 设置同步数据
+    function setSyncData(syncData) {
+      if (!syncData || !syncData.data) return false;
+      Object.entries(syncData.data).forEach(([key, value]) => {
+        if (GITHUB_SYNC_KEYS.includes(key)) {
+          localStorage.setItem(key, JSON.stringify(value));
+        }
+      });
+      return true;
+    }
+
+    // 获取保存的 Token
+    function getGithubToken() {
+      return localStorage.getItem('github_sync_token') || '';
+    }
+
+    // 保存 Token
+    function saveGithubToken(token) {
+      localStorage.setItem('github_sync_token', token);
+    }
+
+    // 获取保存的 Gist ID
+    function getGistId() {
+      return localStorage.getItem('github_gist_id') || '';
+    }
+
+    // 保存 Gist ID
+    function saveGistId(id) {
+      localStorage.setItem('github_gist_id', id);
+    }
+
+    // 获取上次同步时间
+    function getLastSyncTime() {
+      return localStorage.getItem('github_last_sync') || '';
+    }
+
+    // 保存上次同步时间
+    function saveLastSyncTime(time) {
+      localStorage.setItem('github_last_sync', time);
+    }
+
+    // 更新同步 UI
+    function updateSyncUI() {
+      const token = getGithubToken();
+      const gistId = getGistId();
+      const lastSync = getLastSyncTime();
+
+      // Token 显示状态
+      if (token) {
+        $('#githubTokenItem').style.display = 'none';
+        $('#githubTokenSaved').style.display = 'flex';
+      } else {
+        $('#githubTokenItem').style.display = 'flex';
+        $('#githubTokenSaved').style.display = 'none';
+      }
+
+      // Gist ID 显示状态
+      if (gistId) {
+        $('#gistIdItem').style.display = 'none';
+        $('#gistIdSaved').style.display = 'flex';
+        $('#gistIdDisplay').textContent = gistId.substring(0, 8) + '...';
+      } else {
+        $('#gistIdItem').style.display = token ? 'flex' : 'none';
+        $('#gistIdSaved').style.display = 'none';
+      }
+
+      // 上次同步时间
+      if (lastSync) {
+        const date = new Date(lastSync);
+        $('#lastSync').textContent = '上次同步：' + date.toLocaleString('zh-CN');
+      } else {
+        $('#lastSync').textContent = '上次同步：从未';
+      }
+    }
+
+    // 显示同步状态
+    function showSyncStatus(message, isError = false) {
+      const statusEl = $('#syncStatus');
+      statusEl.textContent = message;
+      statusEl.className = 'sync-status ' + (isError ? 'error' : 'success');
+      setTimeout(() => {
+        statusEl.className = 'sync-status';
+        statusEl.textContent = '';
+      }, 5000);
+    }
+
+    // 设置按钮加载状态
+    function setSyncLoading(exporting, loading) {
+      const exportBtn = $('#exportToGithubBtn');
+      const importBtn = $('#importFromGithubBtn');
+      
+      if (exporting) {
+        exportBtn.disabled = loading;
+        exportBtn.querySelector('.sync-text').style.display = loading ? 'none' : 'inline';
+        exportBtn.querySelector('.sync-loading').style.display = loading ? 'inline' : 'none';
+      } else {
+        importBtn.disabled = loading;
+        importBtn.querySelector('.sync-text').style.display = loading ? 'none' : 'inline';
+        importBtn.querySelector('.sync-loading').style.display = loading ? 'inline' : 'none';
+      }
+    }
+
+    // 导出到 GitHub
+    async function exportToGithub() {
+      const token = getGithubToken();
+      if (!token) {
+        showSyncStatus('请先保存 GitHub Token', true);
+        return;
+      }
+
+      setSyncLoading(true, true);
+
+      try {
+        const syncData = getSyncData();
+        const gistId = getGistId();
+        
+        let response;
+        
+        if (gistId) {
+          // 更新现有 Gist
+          response = await fetch(`https://api.github.com/gists/${gistId}`, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `token ${token}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              description: '小茜日常 - 数据同步',
+              files: {
+                [GIST_FILENAME]: {
+                  content: JSON.stringify(syncData, null, 2)
+                }
+              }
+            })
+          });
+        } else {
+          // 创建新 Gist
+          response = await fetch('https://api.github.com/gists', {
+            method: 'POST',
+            headers: {
+              'Authorization': `token ${token}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              description: '小茜日常 - 数据同步',
+              public: false,
+              files: {
+                [GIST_FILENAME]: {
+                  content: JSON.stringify(syncData, null, 2)
+                }
+              }
+            })
+          });
+        }
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || '导出失败');
+        }
+
+        const result = await response.json();
+        
+        // 保存 Gist ID
+        if (!gistId && result.id) {
+          saveGistId(result.id);
+        }
+        
+        // 保存同步时间
+        saveLastSyncTime(new Date().toISOString());
+        
+        updateSyncUI();
+        showSyncStatus('导出成功！数据已保存到 GitHub');
+        
+        // 如果创建了新的 Gist，显示提示
+        if (!gistId) {
+          showToast('已创建新的 Gist，请记下 Gist ID');
+        }
+      } catch (error) {
+        console.error('Export error:', error);
+        showSyncStatus('导出失败：' + error.message, true);
+      } finally {
+        setSyncLoading(true, false);
+      }
+    }
+
+    // 从 GitHub 导入
+    async function importFromGithub() {
+      const token = getGithubToken();
+      if (!token) {
+        showSyncStatus('请先保存 GitHub Token', true);
+        return;
+      }
+
+      const gistId = getGistId();
+      if (!gistId) {
+        showSyncStatus('请先设置 Gist ID', true);
+        return;
+      }
+
+      setSyncLoading(false, true);
+
+      try {
+        const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || '导入失败');
+        }
+
+        const result = await response.json();
+        const file = result.files[GIST_FILENAME];
+        
+        if (!file) {
+          throw new Error('Gist 中未找到数据文件');
+        }
+
+        const syncData = JSON.parse(file.content);
+        
+        // 确认导入
+        const exportedAt = syncData.exportedAt ? new Date(syncData.exportedAt).toLocaleString('zh-CN') : '未知时间';
+        
+        if (confirm(`确定要导入数据吗？\n\n导出时间：${exportedAt}\n\n这将覆盖本地的所有数据！`)) {
+          setSyncData(syncData);
+          saveLastSyncTime(new Date().toISOString());
+          updateSyncUI();
+          showSyncStatus('导入成功！页面即将刷新');
+          setTimeout(() => location.reload(), 1500);
+        } else {
+          setSyncLoading(false, false);
+        }
+      } catch (error) {
+        console.error('Import error:', error);
+        showSyncStatus('导入失败：' + error.message, true);
+        setSyncLoading(false, false);
+      }
+    }
+
+    // 保存 Token 按钮事件
+    function onSaveToken() {
+      const token = $('#githubToken').value.trim();
+      if (!token) {
+        showSyncStatus('请输入 GitHub Token', true);
+        return;
+      }
+      saveGithubToken(token);
+      $('#githubToken').value = '';
+      updateSyncUI();
+      showSyncStatus('Token 已保存');
+    }
+
+    // 编辑 Token 按钮事件
+    function onEditToken() {
+      $('#githubTokenItem').style.display = 'flex';
+      $('#githubTokenSaved').style.display = 'none';
+      $('#githubToken').value = getGithubToken();
+    }
+
+    // 保存 Gist ID 按钮事件
+    function onSaveGistId() {
+      const gistId = $('#gistIdInput').value.trim();
+      if (!gistId) {
+        showSyncStatus('请输入 Gist ID', true);
+        return;
+      }
+      saveGistId(gistId);
+      $('#gistIdInput').value = '';
+      updateSyncUI();
+      showSyncStatus('Gist ID 已保存');
+    }
+
     // ===== 事件绑定 =====
     function bindEvents() {
       const editAnniversaryEl = $('#editAnniversary');
@@ -2492,7 +2932,22 @@
       
       const weatherRefreshBtnEl = $('#weatherRefreshBtn');
       if (weatherRefreshBtnEl) weatherRefreshBtnEl.addEventListener('click', refreshWeather);
-      
+
+      // GitHub 同步事件绑定
+      const saveTokenBtnEl = $('#saveTokenBtn');
+      if (saveTokenBtnEl) saveTokenBtnEl.addEventListener('click', onSaveToken);
+
+      const editTokenBtnEl = $('#editTokenBtn');
+      if (editTokenBtnEl) editTokenBtnEl.addEventListener('click', onEditToken);
+
+      const saveGistIdBtnEl = $('#saveGistIdBtn');
+      if (saveGistIdBtnEl) saveGistIdBtnEl.addEventListener('click', onSaveGistId);
+
+      const exportToGithubBtnEl = $('#exportToGithubBtn');
+      if (exportToGithubBtnEl) exportToGithubBtnEl.addEventListener('click', exportToGithub);
+
+      const importFromGithubBtnEl = $('#importFromGithubBtn');
+      if (importFromGithubBtnEl) importFromGithubBtnEl.addEventListener('click', importFromGithub);
     }
 
     // ===== 初始化 =====
@@ -2527,6 +2982,7 @@
       if (c.myName) $('#whisperAuthor').value = c.myName;
       renderSchedule();
       renderTodos(); renderWhispers();
+      updateSyncUI();
     }
     document.addEventListener('DOMContentLoaded', init);
   </script>
