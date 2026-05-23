@@ -2968,10 +2968,14 @@
       window.deleteWhisper = deleteWhisper;
       window.onBodyRecordDateChange = onBodyRecordDateChange;
       
+      // 第一优先级：主题、导航、事件（立即执行）
       loadTheme();
       updateHeaderDate(); setInterval(updateHeaderDate, 60000);
       initNav(); bindEvents();
-      renderContract(); loadWeather(); renderTodayOverview();
+      
+      // 第二优先级：核心内容（立即执行，不依赖网络）
+      renderContract();
+      renderTodayOverview();
       renderFoodDb(); renderDiet();
       initBodyRecordDate();
       renderBodyStatus(); renderMiniCalendar(); renderSymptomTags(); renderDischargeOptions(); renderBodyHistory(); renderIntimateStatus();
@@ -2983,6 +2987,11 @@
       renderSchedule();
       renderTodos(); renderWhispers();
       updateSyncUI();
+      
+      // 第三优先级：天气（需要网络，延迟加载，不阻塞页面）
+      setTimeout(() => {
+        loadWeather();
+      }, 300);
     }
     document.addEventListener('DOMContentLoaded', init);
   </script>
