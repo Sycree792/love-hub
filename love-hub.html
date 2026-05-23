@@ -2727,9 +2727,6 @@
         $('#joinRoomItem').style.display = 'none';
         $('#roomInfo').style.display = 'block';
         $('#syncActions').style.display = 'flex';
-        $('#roomIdDisplay').textContent = `房间号：${gistId}`;
-        }
-        
         $('#roomIdDisplay').innerHTML = `房间ID: <code>${gistId.substring(0, 12)}...</code> <button class="btn-text" id="leaveRoomBtn">退出</button>`;
         
         // 绑定退出按钮事件
